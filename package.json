@@ -17,8 +17,8 @@
   "bugs": {
     "url": "https://github.com/goitacademy/parcel-project-template/issues"
   },
-"dependencies": {
-    "@vimeo/player": "^2.17.1",
+  "dependencies": {
+    "@vimeo/player": "^2.18.0",
     "lodash.throttle": "^4.1.1",
     "modern-normalize": "^1.1.0",
     "notiflix": "^3.2.5",
