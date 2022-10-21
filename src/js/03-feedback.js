@@ -1,46 +1,49 @@
 import throttle from 'lodash.throttle';
 
 const formRef = document.querySelector('.feedback-form');
-const LOCALE_STORAGE_KEY = 'contact-form-key';
-import localStorage from './storage';
+const nameRef = formRef.querySelector('input');
+const messageRef = formRef.querySelector('textarea');
 
-const onFormInput = event => {
-  const { name, value } = event.target;
+const LOCALE_STORAGE_KEY = 'feedback-form-state';
 
-  let saveData = localStorage.load(LOCALE_STORAGE_KEY);
-  saveData = saveData ? saveData : {};
+formRef.addEventListener('submit', onFormSubmit);
+formRef.addEventListener('input', throttle(onInputChanges, 500));
 
-  saveData[name] = value;
+onPageReload();
 
-  localStorage.save(LOCALE_STORAGE_KEY, saveData);
-};
+function onInputChanges() {
+  const email = nameRef.value;
+  const message = messageRef.value;
 
-const throttledOnFormInput = throttle(onFormInput, 500);
-formRef.addEventListener('input', throttledOnFormInput);
+  const formData = {
+    email,
+    message,
+  };
 
-function initPage() {
-  const saveData = localStorage.load(LOCALE_STORAGE_KEY);
-
-  if (!saveData) {
-    return;
-  }
-  Object.entries(saveData).forEach(([name, value]) => {
-    formRef.elements[name].value = value;
-  });
+  localStorage.setItem(LOCALE_STORAGE_KEY, JSON.stringify(formData));
 }
 
-initPage();
+function onFormSubmit(evt) {
+  evt.preventDefault();
 
-const handleSubmit = event => {
-  event.preventDefault();
+  const formData = {
+    email: evt.currentTarget.elements.email.value,
+    message: evt.currentTarget.elements.message.value,
+  };
 
-  const {
-    elements: { email, message },
-  } = event.currentTarget;
+  console.log('onFormSubmit : formData', formData);
 
-  console.log({ email: email.value, message: message.value });
-  event.currentTarget.reset();
-  localStorage.remove(LOCALE_STORAGE_KEY);
-};
+  evt.currentTarget.reset();
 
-formRef.addEventListener('submit', handleSubmit);
+  localStorage.removeItem(LOCALE_STORAGE_KEY);
+}
+
+function onPageReload() {
+  const savedData = localStorage.getItem(LOCALE_STORAGE_KEY);
+  const parsedData = JSON.parse(savedData);
+
+  if (parsedData) {
+    nameRef.value = parsedData.email;
+    messageRef.value = parsedData.message;
+  }
+}
