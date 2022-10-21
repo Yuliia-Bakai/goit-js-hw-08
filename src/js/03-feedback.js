@@ -1,61 +1,46 @@
 import throttle from 'lodash.throttle';
-import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
-Notify.init({
-  width: '400px',
-  position: 'center-top',
-  fontSize: '18px',
-});
+const formRef = document.querySelector('.feedback-form');
+const LOCALE_STORAGE_KEY = 'contact-form-key';
+import localStorage from './storage';
 
-const form = document.querySelector('.feedback-form');
-// const email = document.querySelector('.feedback-form input');
-// const message = document.querySelector('.feedback-form textarea');
+const onFormInput = event => {
+  const { name, value } = event.target;
 
-const formDataObj = {};
-const FORM_DATA = 'feedback-form-state';
+  let saveData = localStorage.load(LOCALE_STORAGE_KEY);
+  saveData = saveData ? saveData : {};
 
-form.addEventListener('input', throttle(onFormInput, 500));
-form.addEventListener('submit', onFormSubmit);
+  saveData[name] = value;
 
-dataRecovery();
+  localStorage.save(LOCALE_STORAGE_KEY, saveData);
+};
 
-function onFormSubmit(e) {
-  e.preventDefault();
-  let isEmptyField = false;
-  let messageFields = '';
-  const formData = new FormData(form);
-  formData.forEach((value, name) => {
-    if (value === '') {
-      messageFields += form.elements[name].parentNode.textContent.trim() + ', ';
-      isEmptyField = true;
-      formDataObj[name] = value;
-    }
-  });
-  if (isEmptyField) {
-    Notify.failure(`Fields ${messageFields} must be filled!`);
-    // alert(`Fields ${messageFields} must be filled!`);
+const throttledOnFormInput = throttle(onFormInput, 500);
+formRef.addEventListener('input', throttledOnFormInput);
+
+function initPage() {
+  const saveData = localStorage.load(LOCALE_STORAGE_KEY);
+
+  if (!saveData) {
     return;
   }
-
-  console.log(formDataObj);
-  e.currentTarget.reset();
-  localStorage.removeItem(FORM_DATA);
-}
-
-function onFormInput(e) {
-  const formData = new FormData(form);
-  formData.forEach((value, name) => {
-    formDataObj[name] = value;
+  Object.entries(saveData).forEach(([name, value]) => {
+    formRef.elements[name].value = value;
   });
-
-  localStorage.setItem(FORM_DATA, JSON.stringify(formDataObj));
 }
 
-function dataRecovery() {
-  const data = JSON.parse(localStorage.getItem(FORM_DATA));
-  if (data) {
-    Object.entries(data).forEach(([name, value]) => {
-      form.elements[name].value = value;
-    });
-  }
-}
+initPage();
+
+const handleSubmit = event => {
+  event.preventDefault();
+
+  const {
+    elements: { email, message },
+  } = event.currentTarget;
+
+  console.log({ email: email.value, message: message.value });
+  event.currentTarget.reset();
+  localStorage.remove(LOCALE_STORAGE_KEY);
+};
+
+formRef.addEventListener('submit', handleSubmit);
